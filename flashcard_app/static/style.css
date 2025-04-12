@@ -100,6 +100,10 @@ hr {
     padding: 0;
 }
 
+.dataset-name-link {
+    color: #007bff !important;
+}
+
 .dataset-list li {
     margin-bottom: 10px;
     padding: 10px;
@@ -110,7 +114,7 @@ hr {
 
 .dataset-list li a {
     text-decoration: none;
-    color: #007bff;
+    color: #ffffff;
     font-weight: bold;
 }
 

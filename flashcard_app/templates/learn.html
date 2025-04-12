@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Learn Flashcards{% endblock %}
+{% block title %}{% if mode == 'review' %}Review{% else %}Learn{% endif %} Flashcards{% endblock %}
 
 {% block head_extra %}
 <style>
@@ -8,25 +8,46 @@
         border: 1px solid #ccc;
         padding: 20px;
         margin-bottom: 20px;
-        /* Removed cursor: pointer; as clicking the whole card might interfere with notes */
-        min-height: 150px; /* Ensure minimum size */
-        position: relative; /* For positioning answer */
+        min-height: 150px;
+        position: relative;
         background-color: #f9f9f9;
     }
-    .flashcard .question-area { /* Added wrapper for question click */
+    .flashcard .question-area {
         cursor: pointer;
         margin-bottom: 15px;
     }
     .flashcard .question {
         font-weight: bold;
-        /* margin-bottom: 15px; */ /* Moved margin to wrapper */
+        display: inline-block;
+        margin-right: 10px;
+    }
+    .flashcard .review-indicator { /* Style for the review indicator */
+        font-size: 0.8em;
+        font-weight: bold;
+        color: #e67e22; /* Orange color */
+        background-color: #fdf2e9;
+        padding: 2px 5px;
+        border-radius: 3px;
+        display: none; /* Hidden by default */
+        vertical-align: middle;
+    }
+    .flashcard .review-indicator.visible { /* Class to show the indicator */
+        display: inline-block;
     }
     .flashcard .choices ul {
         list-style: none;
         padding: 0;
+        margin-top: 10px; /* Add some space above choices */
     }
     .flashcard .choices li {
-        margin-bottom: 5px;
+        margin-bottom: 8px; /* Slightly more space between choices */
+    }
+    .flashcard .choice-label { /* Style for A, B, C labels */
+        font-weight: bold;
+        margin-right: 8px;
+        display: inline-block;
+        width: 20px; /* Align labels */
+        text-align: right;
     }
     .flashcard .answer {
         margin-top: 15px;
@@ -34,15 +55,13 @@
         border-top: 1px dashed #eee;
         color: green;
         font-weight: bold;
-        /* Initially hidden */
         opacity: 0;
         transition: opacity 0.5s ease-in-out;
     }
     .flashcard.show-answer .answer {
-        /* Revealed state */
         opacity: 1;
     }
-    /* New styles for notes */
+    /* Styles for notes */
     .notes-section {
         margin-top: 20px;
         padding-top: 15px;
@@ -55,20 +74,48 @@
     }
     .notes-section textarea {
         width: 100%;
-        box-sizing: border-box; /* Include padding and border in element's total width/height */
+        box-sizing: border-box;
         border: 1px solid #ccc;
         padding: 8px;
-        font-family: inherit; /* Use the same font as the rest of the page */
+        font-family: inherit;
         font-size: 0.95em;
     }
     #notes-status {
         font-size: 0.8em;
         color: grey;
         margin-left: 5px;
-        min-height: 1em; /* Prevent layout shift */
+        min-height: 1em;
         display: inline-block;
     }
-    /* End new styles */
+    /* End notes styles */
+
+    /* Styles for review toggle */
+    .review-toggle-section {
+        margin-top: 15px;
+        padding-top: 10px;
+        border-top: 1px dotted #ddd;
+    }
+    .review-toggle-button {
+        padding: 5px 10px;
+        cursor: pointer;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #f0f0f0;
+        font-size: 0.9em;
+    }
+    .review-toggle-button.marked {
+        background-color: #fdf2e9;
+        border-color: #e67e22;
+        color: #e67e22;
+    }
+    #review-status {
+        font-size: 0.8em;
+        color: grey;
+        margin-left: 10px;
+        min-height: 1em;
+        display: inline-block;
+    }
+    /* End review toggle styles */
 
     .navigation {
         display: flex;
@@ -94,7 +141,7 @@
     .nav-button.disabled {
         opacity: 0.5;
         cursor: not-allowed;
-        pointer-events: none; /* Prevent clicks */
+        pointer-events: none;
     }
     .back-link {
          display: inline-block;
@@ -109,38 +156,46 @@
 {% endblock %}
 
 {% block content %}
-    <h2>Learning Dataset (ID: {{ dataset_id }})</h2>
+    {# Display mode in title #}
+    <h2>{% if mode == 'review' %}Reviewing{% else %}Learning{% endif %} Dataset (ID: {{ dataset_id }})</h2>
 
     <div class="navigation">
-        <a href="{{ url_for('show_card', dataset_id=dataset_id, card_index=current_index - 1) }}"
+        {# Add mode=mode to navigation links #}
+        <a href="{{ url_for('show_card', dataset_id=dataset_id, card_index=current_index - 1, mode=mode) }}"
            class="nav-button {% if current_index == 0 %}disabled{% endif %}">
             &laquo; Previous
         </a>
         <span class="card-counter">Card {{ current_index + 1 }} of {{ total_cards }}</span>
-        <a href="{{ url_for('show_card', dataset_id=dataset_id, card_index=current_index + 1) }}"
+        <a href="{{ url_for('show_card', dataset_id=dataset_id, card_index=current_index + 1, mode=mode) }}"
            class="nav-button {% if current_index + 1 >= total_cards %}disabled{% endif %}">
             Next &raquo;
         </a>
     </div>
 
-    {# Changed div id to card-container to avoid conflict with notes id #}
     <div id="card-container" class="flashcard">
-        {# Wrap question/choices in a clickable div to toggle answer #}
         <div class="question-area" onclick="toggleAnswer()">
             <div class="question">
                 Q: {{ card.question }}
             </div>
+            {# --- Visual Indicator for Review --- #}
+            <span class="review-indicator {% if card.mark_for_review %}visible{% endif %}" id="review-indicator">
+                Marked for Review
+            </span>
+            {# --- End Visual Indicator --- #}
+
+            {# --- Display Shuffled Choices with Alphabetical Labels --- #}
             <div class="choices">
                 <ul>
-                    <li>1: {{ card.choice1 }}</li>
-                    <li>2: {{ card.choice2 }}</li>
-                    <li>3: {{ card.choice3 }}</li>
-                    <li>4: {{ card.choice4 }}</li>
-                    {% if card.choice5 %}
-                    <li>5: {{ card.choice5 }}</li>
-                    {% endif %}
+                    {% set letters = ['A', 'B', 'C', 'D', 'E'] %} {# Define letters for labels #}
+                    {% for choice in shuffled_choices %}
+                        <li>
+                            <span class="choice-label">{{ letters[loop.index0] }}:</span> {{ choice }}
+                        </li>
+                    {% endfor %}
                 </ul>
             </div>
+            {# --- End Shuffled Choices --- #}
+
             <div class="answer">
                 Correct Answer: {{ card.correct_answer }}
             </div>
@@ -154,6 +209,18 @@
         </div>
         {# --- End Notes Section --- #}
 
+        {# --- Review Toggle Section --- #}
+        <div class="review-toggle-section">
+            <button id="review-toggle-button"
+                    class="review-toggle-button {% if card.mark_for_review %}marked{% endif %}"
+                    data-card-id="{{ card.id }}"
+                    onclick="toggleReviewStatus(this)">
+                {% if card.mark_for_review %}Unmark for Review{% else %}Mark for Review{% endif %}
+            </button>
+            <span id="review-status"></span>
+        </div>
+        {# --- End Review Toggle Section --- #}
+
     </div> {# End card-container #}
 
     <a href="{{ url_for('index') }}" class="back-link">&laquo; Back to Datasets</a>
@@ -163,7 +230,6 @@
 {% block scripts %}
 <script>
     function toggleAnswer() {
-        // Target the container div now
         const cardElement = document.getElementById('card-container');
         cardElement.classList.toggle('show-answer');
     }
@@ -171,13 +237,12 @@
     // --- Notes Auto-Save Logic ---
     const notesTextarea = document.getElementById('card-notes');
     const notesStatus = document.getElementById('notes-status');
-    let saveTimeout; // To debounce saving slightly if needed, or clear status
+    let saveTimeout;
 
     notesTextarea.addEventListener('blur', function() {
         const cardId = this.dataset.cardId;
         const notesContent = this.value;
 
-        // Clear any previous status timeout
         clearTimeout(saveTimeout);
         notesStatus.textContent = 'Saving...';
         notesStatus.style.color = 'orange';
@@ -188,11 +253,9 @@
         fetch(`/update_note/${cardId}`, {
             method: 'POST',
             body: formData
-            // No 'Content-Type' header needed when using FormData; browser sets it correctly
         })
         .then(response => {
             if (!response.ok) {
-                // Try to get error message from JSON response if possible
                 return response.json().then(err => { throw new Error(err.message || `HTTP error! status: ${response.status}`) });
             }
             return response.json();
@@ -211,13 +274,61 @@
             notesStatus.style.color = 'red';
         })
         .finally(() => {
-            // Clear the status message after a few seconds
             saveTimeout = setTimeout(() => {
                 notesStatus.textContent = '';
-            }, 3000); // Clear after 3 seconds
+            }, 3000);
         });
     });
     // --- End Notes Auto-Save Logic ---
+
+    // --- Review Toggle Logic ---
+    const reviewStatus = document.getElementById('review-status');
+    const reviewIndicator = document.getElementById('review-indicator');
+    let reviewTimeout;
+
+    function toggleReviewStatus(button) {
+        const cardId = button.dataset.cardId;
+
+        clearTimeout(reviewTimeout);
+        reviewStatus.textContent = 'Updating...';
+        reviewStatus.style.color = 'orange';
+
+        fetch(`/toggle_review/${cardId}`, {
+            method: 'POST'
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message || `HTTP error! status: ${response.status}`) });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                button.classList.toggle('marked');
+                const newIsMarked = button.classList.contains('marked');
+                button.textContent = newIsMarked ? 'Unmark for Review' : 'Mark for Review';
+
+                // Toggle visual indicator class
+                reviewIndicator.classList.toggle('visible', newIsMarked);
+
+                reviewStatus.textContent = 'Status updated';
+                reviewStatus.style.color = 'green';
+            } else {
+                throw new Error(data.message || 'Unknown error toggling review status.');
+            }
+        })
+        .catch(error => {
+            console.error('Error toggling review status:', error);
+            reviewStatus.textContent = 'Error updating!';
+            reviewStatus.style.color = 'red';
+        })
+        .finally(() => {
+            reviewTimeout = setTimeout(() => {
+                reviewStatus.textContent = '';
+            }, 3000);
+        });
+    }
+    // --- End Review Toggle Logic ---
 
 </script>
 {% endblock %}

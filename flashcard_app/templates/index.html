@@ -24,10 +24,16 @@
         <ul class="dataset-list">
             {% for dataset in datasets %}
                 <li>
-                    <a href="{{ url_for('learn_dataset', dataset_id=dataset.id) }}">{{ dataset.name }}</a>
-                    {# Add the delete button form here #}
-                    <form action="{{ url_for('delete_dataset', dataset_id=dataset.id) }}" method="POST" style="display:inline; margin-left: 10px;" onsubmit="return confirm('Are you sure you want to delete the dataset \'{{ dataset.name }}\'? This action cannot be undone.');">
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button> {# Using btn-sm for a smaller button #}
+                    {# Learn Link #}
+                    <a href="{{ url_for('learn_dataset', dataset_id=dataset.id) }}" class="dataset-name-link">{{ dataset.name }}</a>
+
+                    {# Review Button - Added #}
+                    {# Assuming the route name will be 'review_dataset' #}
+                    <a href="{{ url_for('review_dataset', dataset_id=dataset.id) }}" class="btn btn-secondary btn-sm" style="margin-left: 10px;">Review Marked</a>
+
+                    {# Delete Button Form #}
+                    <form action="{{ url_for('delete_dataset', dataset_id=dataset.id) }}" method="POST" style="display:inline; margin-left: 5px;" onsubmit="return confirm('Are you sure you want to delete the dataset \'{{ dataset.name }}\'? This action cannot be undone.');">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                     </form>
                 </li>
             {% endfor %}
