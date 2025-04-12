@@ -51,26 +51,27 @@ graph TD
         JS1 -- Yes --> FE1[POST /delete_dataset/<id>];
         FE1 --> BE1[app.py: /delete_dataset route];
         BE1 --> DB1[database.py: delete_dataset(id)];
-        DB1 -- Deletes Dataset and Cards (Cascade) --> BE1;
+        DB1 -- "Deletes Dataset and Cards (Cascade)" --> BE1;  %% Corrected line %%
         BE1 --> UP1[Update progress.json];
         UP1 --> BE1;
-        BE1 -- Flashes Success/Error --> FE2[Redirect to /];
+        BE1 -- "Flashes Success/Error" --> FE2[Redirect to /];
     end
 
     subgraph Feature 2: Persistent Notes
         U2[User Views Card] --> FE3[learn.html: Renders card + notes textarea];
         FE3 --> U3[User Edits Notes];
-        U3 -- Clicks Away (blur) --> JS2{JS 'blur' Event Listener};
+        U3 -- "Clicks Away (blur)" --> JS2{JS 'blur' Event Listener};
         JS2 --> FE4[Async POST /update_note/<card_id>];
         FE4 --> BE2[app.py: /update_note route];
         BE2 --> DB2[database.py: update_card_notes(id, notes)];
-        DB2 -- Updates DB --> BE2;
+        DB2 -- "Updates DB" --> BE2;
         BE2 --> FE5[Return JSON status];
         FE5 --> JS3{JS Updates Status Indicator};
 
-        DB3[database.py: init_db] -- Adds 'notes' column --> DB4[cards table];
-        DB5[database.py: add_card] -- Includes 'notes' --> DB4;
-        DB6[database.py: get_cards_by_dataset] -- Selects 'notes' --> BE3[app.py: /learn route];
+        DB3[database.py: init_db] -- "Adds 'notes' column" --> DB4[cards table];
+        DB5[database.py: add_card] -- "Includes 'notes'" --> DB4;
+        DB6[database.py: get_cards_by_dataset] -- "Selects 'notes'" --> BE3[app.py: /learn route];
         BE3 --> FE3;
     end
+
 ```
