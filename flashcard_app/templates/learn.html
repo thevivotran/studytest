@@ -8,14 +8,18 @@
         border: 1px solid #ccc;
         padding: 20px;
         margin-bottom: 20px;
-        cursor: pointer; /* Indicate it's clickable */
+        /* Removed cursor: pointer; as clicking the whole card might interfere with notes */
         min-height: 150px; /* Ensure minimum size */
         position: relative; /* For positioning answer */
         background-color: #f9f9f9;
     }
+    .flashcard .question-area { /* Added wrapper for question click */
+        cursor: pointer;
+        margin-bottom: 15px;
+    }
     .flashcard .question {
         font-weight: bold;
-        margin-bottom: 15px;
+        /* margin-bottom: 15px; */ /* Moved margin to wrapper */
     }
     .flashcard .choices ul {
         list-style: none;
@@ -38,6 +42,34 @@
         /* Revealed state */
         opacity: 1;
     }
+    /* New styles for notes */
+    .notes-section {
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+    }
+    .notes-section h4 {
+        margin-bottom: 5px;
+        font-size: 1em;
+        color: #444;
+    }
+    .notes-section textarea {
+        width: 100%;
+        box-sizing: border-box; /* Include padding and border in element's total width/height */
+        border: 1px solid #ccc;
+        padding: 8px;
+        font-family: inherit; /* Use the same font as the rest of the page */
+        font-size: 0.95em;
+    }
+    #notes-status {
+        font-size: 0.8em;
+        color: grey;
+        margin-left: 5px;
+        min-height: 1em; /* Prevent layout shift */
+        display: inline-block;
+    }
+    /* End new styles */
+
     .navigation {
         display: flex;
         justify-content: space-between;
@@ -91,25 +123,38 @@
         </a>
     </div>
 
-    <div id="flashcard" class="flashcard" onclick="toggleAnswer()">
-        <div class="question">
-            Q: {{ card.question }}
+    {# Changed div id to card-container to avoid conflict with notes id #}
+    <div id="card-container" class="flashcard">
+        {# Wrap question/choices in a clickable div to toggle answer #}
+        <div class="question-area" onclick="toggleAnswer()">
+            <div class="question">
+                Q: {{ card.question }}
+            </div>
+            <div class="choices">
+                <ul>
+                    <li>1: {{ card.choice1 }}</li>
+                    <li>2: {{ card.choice2 }}</li>
+                    <li>3: {{ card.choice3 }}</li>
+                    <li>4: {{ card.choice4 }}</li>
+                    {% if card.choice5 %}
+                    <li>5: {{ card.choice5 }}</li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="answer">
+                Correct Answer: {{ card.correct_answer }}
+            </div>
+        </div> {# End question-area #}
+
+        {# --- Notes Section --- #}
+        <div class="notes-section">
+            <h4>Notes:</h4>
+            <textarea id="card-notes" data-card-id="{{ card.id }}" rows="4">{{ card.notes if card.notes else '' }}</textarea>
+            <span id="notes-status"></span>
         </div>
-        <div class="choices">
-            <ul>
-                <li>1: {{ card.choice1 }}</li>
-                <li>2: {{ card.choice2 }}</li>
-                <li>3: {{ card.choice3 }}</li>
-                <li>4: {{ card.choice4 }}</li>
-                {% if card.choice5 %}
-                <li>5: {{ card.choice5 }}</li>
-                {% endif %}
-            </ul>
-        </div>
-        <div class="answer">
-            Correct Answer: {{ card.correct_answer }}
-        </div>
-    </div>
+        {# --- End Notes Section --- #}
+
+    </div> {# End card-container #}
 
     <a href="{{ url_for('index') }}" class="back-link">&laquo; Back to Datasets</a>
 
@@ -118,8 +163,61 @@
 {% block scripts %}
 <script>
     function toggleAnswer() {
-        const cardElement = document.getElementById('flashcard');
+        // Target the container div now
+        const cardElement = document.getElementById('card-container');
         cardElement.classList.toggle('show-answer');
     }
+
+    // --- Notes Auto-Save Logic ---
+    const notesTextarea = document.getElementById('card-notes');
+    const notesStatus = document.getElementById('notes-status');
+    let saveTimeout; // To debounce saving slightly if needed, or clear status
+
+    notesTextarea.addEventListener('blur', function() {
+        const cardId = this.dataset.cardId;
+        const notesContent = this.value;
+
+        // Clear any previous status timeout
+        clearTimeout(saveTimeout);
+        notesStatus.textContent = 'Saving...';
+        notesStatus.style.color = 'orange';
+
+        const formData = new FormData();
+        formData.append('notes', notesContent);
+
+        fetch(`/update_note/${cardId}`, {
+            method: 'POST',
+            body: formData
+            // No 'Content-Type' header needed when using FormData; browser sets it correctly
+        })
+        .then(response => {
+            if (!response.ok) {
+                // Try to get error message from JSON response if possible
+                return response.json().then(err => { throw new Error(err.message || `HTTP error! status: ${response.status}`) });
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                notesStatus.textContent = 'Saved';
+                notesStatus.style.color = 'green';
+            } else {
+                throw new Error(data.message || 'Unknown error saving notes.');
+            }
+        })
+        .catch(error => {
+            console.error('Error saving notes:', error);
+            notesStatus.textContent = 'Error saving!';
+            notesStatus.style.color = 'red';
+        })
+        .finally(() => {
+            // Clear the status message after a few seconds
+            saveTimeout = setTimeout(() => {
+                notesStatus.textContent = '';
+            }, 3000); // Clear after 3 seconds
+        });
+    });
+    // --- End Notes Auto-Save Logic ---
+
 </script>
 {% endblock %}

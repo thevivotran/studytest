@@ -2,7 +2,7 @@ import os
 import json
 import csv
 import io # Needed for reading file stream directly
-from flask import Flask, render_template, request, redirect, url_for, flash, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, abort, jsonify # Added jsonify
 from werkzeug.utils import secure_filename # For secure file handling
 import database
 
@@ -55,16 +55,21 @@ def load_progress():
         print(f"Error reading progress file ({PROGRESS_FILE_PATH}): {e}. Returning empty progress.")
         return {}
 
-
-def save_progress(dataset_id, card_index):
-    """Saves the learning progress for a specific dataset."""
-    progress = load_progress()
-    progress[str(dataset_id)] = card_index # Use string key for JSON compatibility
+def _save_progress_data(progress_dict):
+    """Saves the entire progress dictionary to the JSON file."""
     try:
         with open(PROGRESS_FILE_PATH, 'w') as f:
-            json.dump(progress, f, indent=4)
+            json.dump(progress_dict, f, indent=4)
+        return True
     except IOError as e:
         print(f"Error saving progress file ({PROGRESS_FILE_PATH}): {e}")
+        return False
+
+def save_progress(dataset_id, card_index):
+    """Loads, updates, and saves the learning progress for a specific dataset."""
+    progress = load_progress()
+    progress[str(dataset_id)] = card_index # Use string key for JSON compatibility
+    _save_progress_data(progress) # Use the helper to save the whole dict
 
 
 # --- Routes ---
@@ -137,6 +142,7 @@ def upload_file():
                 "choice3": choice3,
                 "choice4": choice4,
                 "choice5": choice5
+                # Notes will be added with default empty string by database.add_card
             })
 
         if not cards_to_add:
@@ -152,12 +158,15 @@ def upload_file():
         added_count = 0
         # Consider using a transaction in database.py for bulk inserts
         for card_data in cards_to_add:
+            # database.add_card now handles the 'notes' field internally with a default
             if database.add_card(dataset_id=dataset_id, **card_data):
                 added_count += 1
             else:
                 # Rollback or cleanup might be needed here in a more complex scenario
                 flash(f"Error adding card: {card_data['question'][:30]}...", 'danger')
                 # Optionally delete the partially added dataset? For now, just report error.
+                # Consider deleting the dataset if card adding fails mid-way
+                # database.delete_dataset(dataset_id) # Example cleanup
                 return redirect(url_for('index'))
 
         flash(f"Successfully uploaded dataset '{dataset_name}' with {added_count} cards.", 'success')
@@ -189,6 +198,9 @@ def learn_dataset(dataset_id):
     # Validate that the dataset actually exists and has cards before redirecting
     cards = database.get_cards_by_dataset(dataset_id)
     if not cards:
+        # Check if the dataset ID itself is invalid (was deleted maybe?)
+        # A simple way is to try fetching datasets again, though less efficient.
+        # Or assume if get_cards is empty, it's gone or empty.
         flash(f"Dataset {dataset_id} not found or is empty.", "warning")
         return redirect(url_for('index'))
 
@@ -218,7 +230,7 @@ def show_card(dataset_id, card_index):
         # Redirect to the first card of this dataset
         return redirect(url_for('show_card', dataset_id=dataset_id, card_index=0))
 
-    # Get the current card
+    # Get the current card (includes 'notes' field now)
     current_card = cards[card_index]
 
     # Save progress *after* validation and fetching the card
@@ -232,8 +244,54 @@ def show_card(dataset_id, card_index):
                            total_cards=total_cards)
 
 
+# --- New Routes for Deletion and Notes ---
+
+@app.route('/delete_dataset/<int:dataset_id>', methods=['POST'])
+def delete_dataset(dataset_id):
+    """Deletes a dataset and its associated progress."""
+    # Optional: Add check to get dataset name for flash message before deleting
+    # dataset_name = database.get_dataset_name_by_id(dataset_id) # Requires new DB function
+
+    if database.delete_dataset(dataset_id):
+        # Remove progress for this dataset
+        progress = load_progress()
+        dataset_id_str = str(dataset_id)
+        if dataset_id_str in progress:
+            del progress[dataset_id_str]
+            if not _save_progress_data(progress):
+                 flash('Dataset deleted, but failed to update progress file.', 'warning')
+            else:
+                 flash(f'Dataset {dataset_id} deleted successfully.', 'success') # Use ID if name not fetched
+                 # flash(f'Dataset "{dataset_name}" deleted successfully.', 'success') # If name was fetched
+        else:
+            flash(f'Dataset {dataset_id} deleted successfully (no progress data found).', 'success')
+    else:
+        flash(f'Error deleting dataset {dataset_id}. It might not exist.', 'danger')
+
+    return redirect(url_for('index'))
+
+
+@app.route('/update_note/<int:card_id>', methods=['POST'])
+def update_note(card_id):
+    """Updates the notes for a specific card via AJAX."""
+    notes = request.form.get('notes')
+    if notes is None:
+        # Check if data was sent as JSON instead
+        data = request.get_json()
+        if data and 'notes' in data:
+            notes = data['notes']
+        else:
+            return jsonify({'status': 'error', 'message': 'Missing notes data'}), 400
+
+    if database.update_card_notes(card_id, notes):
+        return jsonify({'status': 'success'})
+    else:
+        # Consider more specific error messages based on DB function return if needed
+        return jsonify({'status': 'error', 'message': 'Failed to update notes in database'}), 500
+
+
 # --- Main Execution ---
 if __name__ == '__main__':
     # Note: Use 'flask run' command instead of running this directly for development server
     # The Dockerfile uses 'flask run'
-    print("To run the app, use the command: flask run")
+    print("To run the app, use the command: flask run --debug") # Added --debug for development

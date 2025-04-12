@@ -8,15 +8,22 @@ DATABASE_PATH = os.path.join(DATABASE_DIR, 'flashcard.db')
 def get_db_connection():
     """Establishes a connection to the SQLite database."""
     # Ensure the /data directory exists (important for the first run)
-    # Although the volume mount should handle this, a check doesn't hurt.
     os.makedirs(DATABASE_DIR, exist_ok=True)
     conn = sqlite3.connect(DATABASE_PATH)
     # Return rows as dictionary-like objects
     conn.row_factory = sqlite3.Row
+    # Enable foreign key constraint enforcement (good practice)
+    conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
+def _table_has_column(cursor, table_name, column_name):
+    """Checks if a table has a specific column."""
+    cursor.execute(f"PRAGMA table_info({table_name})")
+    columns = [column[1] for column in cursor.fetchall()]
+    return column_name in columns
+
 def init_db():
-    """Initializes the database by creating tables if they don't exist."""
+    """Initializes the database by creating tables and adding columns if they don't exist."""
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -43,10 +50,21 @@ def init_db():
                 FOREIGN KEY (dataset_id) REFERENCES datasets (id) ON DELETE CASCADE
             )
         ''')
+
+        # Add 'notes' column to cards table if it doesn't exist
+        if not _table_has_column(cursor, 'cards', 'notes'):
+            print("Adding 'notes' column to 'cards' table...")
+            cursor.execute('ALTER TABLE cards ADD COLUMN notes TEXT')
+            print("'notes' column added.")
+        else:
+            print("'notes' column already exists in 'cards' table.")
+
+
         conn.commit()
         print("Database initialized successfully.")
     except sqlite3.Error as e:
         print(f"Database initialization error: {e}")
+        conn.rollback() # Rollback changes on error
     finally:
         conn.close()
 
@@ -65,24 +83,26 @@ def add_dataset(name):
         return None
     except sqlite3.Error as e:
         print(f"Error adding dataset '{name}': {e}")
+        conn.rollback()
         return None
     finally:
         conn.close()
 
-def add_card(dataset_id, question, correct_answer, choice1, choice2, choice3, choice4, choice5=None):
-    """Adds a new card to a specific dataset."""
+def add_card(dataset_id, question, correct_answer, choice1, choice2, choice3, choice4, choice5=None, notes=''):
+    """Adds a new card to a specific dataset, including optional notes."""
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
         cursor.execute('''
-            INSERT INTO cards (dataset_id, question, correct_answer, choice1, choice2, choice3, choice4, choice5)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (dataset_id, question, correct_answer, choice1, choice2, choice3, choice4, choice5))
+            INSERT INTO cards (dataset_id, question, correct_answer, choice1, choice2, choice3, choice4, choice5, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (dataset_id, question, correct_answer, choice1, choice2, choice3, choice4, choice5, notes))
         conn.commit()
         # print(f"Card added to dataset {dataset_id}: {question[:30]}...") # Optional logging
         return True
     except sqlite3.Error as e:
         print(f"Error adding card to dataset {dataset_id}: {e}")
+        conn.rollback()
         return False
     finally:
         conn.close()
@@ -102,10 +122,15 @@ def get_datasets():
         conn.close()
 
 def get_cards_by_dataset(dataset_id):
-    """Retrieves all cards for a specific dataset, ordered by ID."""
+    """
+    Retrieves all cards for a specific dataset, ordered by ID.
+    Includes the 'notes' field.
+    Note: SELECT * is used for simplicity, but explicitly listing columns is generally safer.
+    """
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
+        # SELECT * will include the new 'notes' column
         cursor.execute("SELECT * FROM cards WHERE dataset_id = ? ORDER BY id", (dataset_id,))
         cards = cursor.fetchall()
         return cards
@@ -129,10 +154,55 @@ def get_dataset_id_by_name(name):
     finally:
         conn.close()
 
+def delete_dataset(dataset_id):
+    """Deletes a dataset and all its associated cards (due to ON DELETE CASCADE)."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM datasets WHERE id = ?", (dataset_id,))
+        conn.commit()
+        if cursor.rowcount > 0:
+            print(f"Dataset {dataset_id} deleted successfully.")
+            return True
+        else:
+            print(f"Dataset {dataset_id} not found for deletion.")
+            return False # Indicate dataset wasn't found
+    except sqlite3.Error as e:
+        print(f"Error deleting dataset {dataset_id}: {e}")
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
+
+def update_card_notes(card_id, notes):
+    """Updates the notes for a specific card."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE cards SET notes = ? WHERE id = ?", (notes, card_id))
+        conn.commit()
+        if cursor.rowcount > 0:
+            # print(f"Notes updated for card {card_id}.") # Optional logging
+            return True
+        else:
+            print(f"Card {card_id} not found for notes update.")
+            return False # Indicate card wasn't found
+    except sqlite3.Error as e:
+        print(f"Error updating notes for card {card_id}: {e}")
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
+
+
 if __name__ == '__main__':
     # Example usage: Initialize DB if script is run directly
     print("Initializing database directly...")
     init_db()
     # You could add test data insertion here if needed
-    # add_dataset("Sample Set")
-    # add_card(1, "Q1?", "A1", "C1", "C2", "C3", "C4")
+    # ds_id = add_dataset("Sample Set with Notes")
+    # if ds_id:
+    #     add_card(ds_id, "Q1?", "A1", "C1", "C2", "C3", "C4", notes="This is a note for Q1.")
+    #     add_card(ds_id, "Q2?", "A2", "C1", "C2", "C3", "C4")
+    #     update_card_notes(1, "Updated note for card 1") # Assuming card ID 1 exists
+    #     delete_dataset(ds_id) # Example deletion
