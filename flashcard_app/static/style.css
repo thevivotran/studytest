@@ -89,6 +89,10 @@ hr {
     border-color: #ddd;
 }
 
+.btn-danger {
+    background-color: red !important;
+    border-color: red !important;
+}
 
 /* Dataset List */
 .dataset-list {
