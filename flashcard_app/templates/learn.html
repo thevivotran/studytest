@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Learn Flashcards{% endblock %}
+
+{% block head_extra %}
+<style>
+    .flashcard {
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin-bottom: 20px;
+        cursor: pointer; /* Indicate it's clickable */
+        min-height: 150px; /* Ensure minimum size */
+        position: relative; /* For positioning answer */
+        background-color: #f9f9f9;
+    }
+    .flashcard .question {
+        font-weight: bold;
+        margin-bottom: 15px;
+    }
+    .flashcard .choices ul {
+        list-style: none;
+        padding: 0;
+    }
+    .flashcard .choices li {
+        margin-bottom: 5px;
+    }
+    .flashcard .answer {
+        margin-top: 15px;
+        padding-top: 10px;
+        border-top: 1px dashed #eee;
+        color: green;
+        font-weight: bold;
+        /* Initially hidden */
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
+    .flashcard.show-answer .answer {
+        /* Revealed state */
+        opacity: 1;
+    }
+    .navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .card-counter {
+        font-style: italic;
+        color: #555;
+    }
+    .nav-button {
+        padding: 8px 15px;
+        text-decoration: none;
+        border: 1px solid #ddd;
+        background-color: #eee;
+        color: #333;
+        border-radius: 4px;
+    }
+    .nav-button:hover {
+        background-color: #ddd;
+    }
+    .nav-button.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none; /* Prevent clicks */
+    }
+    .back-link {
+         display: inline-block;
+         margin-top: 20px;
+         color: #007bff;
+         text-decoration: none;
+    }
+    .back-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+    <h2>Learning Dataset (ID: {{ dataset_id }})</h2>
+
+    <div class="navigation">
+        <a href="{{ url_for('show_card', dataset_id=dataset_id, card_index=current_index - 1) }}"
+           class="nav-button {% if current_index == 0 %}disabled{% endif %}">
+            &laquo; Previous
+        </a>
+        <span class="card-counter">Card {{ current_index + 1 }} of {{ total_cards }}</span>
+        <a href="{{ url_for('show_card', dataset_id=dataset_id, card_index=current_index + 1) }}"
+           class="nav-button {% if current_index + 1 >= total_cards %}disabled{% endif %}">
+            Next &raquo;
+        </a>
+    </div>
+
+    <div id="flashcard" class="flashcard" onclick="toggleAnswer()">
+        <div class="question">
+            Q: {{ card.question }}
+        </div>
+        <div class="choices">
+            <ul>
+                <li>1: {{ card.choice1 }}</li>
+                <li>2: {{ card.choice2 }}</li>
+                <li>3: {{ card.choice3 }}</li>
+                <li>4: {{ card.choice4 }}</li>
+                {% if card.choice5 %}
+                <li>5: {{ card.choice5 }}</li>
+                {% endif %}
+            </ul>
+        </div>
+        <div class="answer">
+            Correct Answer: {{ card.correct_answer }}
+        </div>
+    </div>
+
+    <a href="{{ url_for('index') }}" class="back-link">&laquo; Back to Datasets</a>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleAnswer() {
+        const cardElement = document.getElementById('flashcard');
+        cardElement.classList.toggle('show-answer');
+    }
+</script>
+{% endblock %}
