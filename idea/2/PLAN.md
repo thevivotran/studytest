@@ -51,7 +51,7 @@ graph TD
         JS1 -- Yes --> FE1[POST /delete_dataset/<id>];
         FE1 --> BE1[app.py: /delete_dataset route];
         BE1 --> DB1[database.py: delete_dataset(id)];
-        DB1 -- "Deletes Dataset & Cards (Cascade)" --> BE1;
+        DB1 -- Deletes Dataset and Cards (Cascade) --> BE1;
         BE1 --> UP1[Update progress.json];
         UP1 --> BE1;
         BE1 -- Flashes Success/Error --> FE2[Redirect to /];
