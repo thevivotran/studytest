@@ -87,7 +87,7 @@ Visit `http://127.0.0.1:5000` to play around with the app.
 
 5. **Add an example dataset**:
 - Input the Dataset name, such as "Example".
-- Select CSV file, choose the [text](my_flashcard_data/topics/GCP_DE_Pro.csv) file.
+- Select CSV file, choose the csv file in `my_flashcard_data/topics/GCP_DE_Pro.csv)`.
 - Hit the Upload Dataset
 
 6. **Explore the feature of the app**
