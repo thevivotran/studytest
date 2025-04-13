@@ -11,7 +11,8 @@ Developed by a data engineer with a passion for coding and powered by the **Gemi
 The repository consists of two folders:
 
 1. **`flashcard_app/`**: The main folder containing the Flask web app code, including backend logic and frontend UI.
-2. **`idea/`**: A folder that houses all draft ideas, brainstorming notes, and detailed plans for each phase of development.
+2. **`my_flashcard_data/`**: The persistence data folder for the Flask web app, including database and progress tracking file.
+3. **`idea/`**: A folder that houses all draft ideas, brainstorming notes, and detailed plans for each phase of development.
 
 ## 🚀 Features
 
@@ -32,8 +33,15 @@ The repository consists of two folders:
     - **Frontend**: HTML templates, CSS for styling, and JavaScript for interactivity.
     - Configuration files for hosting, database setup, and environment variables.
 
+### 2. `my_flashcard_data/`
 
-### 2. `idea/`
+- A persistence storage for the Flask application.
+- Includes:
+    - **database**: Stores datasets including questions, anwsers and correct answer.
+    - **json**: Tracking progress of studying for each dataset.
+    - **example_topics/**: Contains a sample csv file to initiate if user do not know the required format of a csv.
+
+### 3. `idea/`
 
 - A hub for brainstorming and planning future features.
 - Includes:
@@ -61,20 +69,28 @@ cd studytest
 ```
 
 
-3. **Build App**:
+2. **Build App**:
 
 ```
 make build
 ```
 
-4. **Run the Flask server**:
+3. **Run the Flask server**:
 
 ```
 make
 ```
 
-5. **Open in a browser**:
+4. **Open in a browser**:
 Visit `http://127.0.0.1:5000` to play around with the app.
+
+
+5. **Add an example dataset**:
+- Input the Dataset name, such as "Example".
+- Select CSV file, choose the [text](my_flashcard_data/topics/GCP_DE_Pro.csv) file.
+- Hit the Upload Dataset
+
+6. **Explore the feature of the app**
 
 ## 💡 Development Philosophy
 
