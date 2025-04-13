@@ -1,0 +1,114 @@
+/* Keep styles specific to learn.html functionality, adapted for Pico */
+
+/* Flashcard Article adjustments (Pico handles base styling via <article>) */
+.flashcard {
+    /* min-height: 150px; /* Keep if needed for layout consistency */
+    position: relative; /* Keep for potential absolute positioning of children */
+    /* Remove background, border, padding, margin - handled by Pico <article> */
+}
+
+.flashcard .question-area {
+    cursor: pointer;
+    margin-bottom: var(--pico-spacing); /* Use Pico spacing */
+}
+
+/* Question styling (using <strong> in HTML now) - Remove if <strong> is sufficient */
+
+/* Review Indicator */
+.flashcard .review-indicator {
+    font-size: 0.8em;
+    font-weight: bold; /* Keep */
+    color: var(--pico-color-orange-600, #e67e22); /* Use Pico variable w/ fallback */
+    background-color: var(--pico-color-orange-100, #fdf2e9); /* Use Pico variable w/ fallback */
+    padding: 0.1em 0.4em; /* Adjust padding */
+    border-radius: var(--pico-border-radius); /* Use Pico radius */
+    display: none; /* Hidden by default */
+    vertical-align: middle;
+    margin-left: var(--pico-spacing-small); /* Add small margin */
+}
+.flashcard .review-indicator.visible {
+    display: inline-block;
+}
+
+/* Choices List (Pico styles ul, but we need specific tweaks) */
+.flashcard .choices ul {
+    list-style: none;
+    padding: 0;
+    margin-top: var(--pico-spacing);
+    margin-bottom: 0; /* Reset bottom margin */
+}
+.flashcard .choices li {
+    margin-bottom: var(--pico-spacing-small); /* Use smaller spacing */
+}
+/* kbd tag styling handled by Pico - Remove .choice-label */
+
+
+/* Answer reveal */
+.flashcard .answer {
+    margin-top: var(--pico-spacing);
+    padding-top: var(--pico-spacing);
+    border-top: var(--pico-border-width) dashed var(--pico-muted-border-color); /* Use Pico vars */
+    color: var(--pico-color-green-600, green); /* Use Pico var w/ fallback */
+    font-weight: bold; /* Keep */
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out, height 0.4s ease-in-out, visibility 0.4s ease-in-out, margin 0.4s ease-in-out, padding 0.4s ease-in-out; /* Smoother transition */
+    /* Ensure it's hidden properly */
+    visibility: hidden;
+    height: 0;
+    overflow: hidden;
+    margin-bottom: 0; /* Collapse margin when hidden */
+    padding-bottom: 0; /* Collapse padding when hidden */
+
+}
+.flashcard.show-answer .answer {
+    opacity: 1;
+    visibility: visible;
+    height: auto;
+    /* Restore margins/padding if needed, Pico might add some */
+    margin-bottom: var(--pico-spacing);
+    padding-bottom: var(--pico-spacing-small);
+}
+
+/* Notes Section (Pico styles label, textarea) */
+.notes-section {
+    margin-top: var(--pico-spacing);
+    padding-top: var(--pico-spacing);
+    border-top: var(--pico-border-width) solid var(--pico-muted-border-color); /* Use Pico vars */
+}
+/* Remove h4 style */
+#notes-status {
+    font-size: 0.8em;
+    color: var(--pico-muted-color); /* Use Pico muted color */
+    margin-left: var(--pico-spacing-small);
+    min-height: 1em; /* Keep min-height */
+    display: inline-block;
+    transition: opacity 0.5s ease-out; /* Add fade out for status */
+}
+
+/* Review Toggle Section */
+.review-toggle-section {
+    margin-top: var(--pico-spacing);
+    padding-top: var(--pico-spacing);
+    border-top: var(--pico-border-width) dotted var(--pico-muted-border-color); /* Use Pico vars */
+}
+/* Base button style handled by Pico classes in HTML - Remove .review-toggle-button base */
+
+/* Keep marked state, adapt to Pico */
+.review-toggle-button.marked {
+    /* Override Pico secondary outline variables */
+    --pico-color: var(--pico-color-orange-600, #e67e22);
+    --pico-background-color: var(--pico-color-orange-100, #fdf2e9);
+    --pico-border-color: var(--pico-color-orange-400, #e67e22); /* Use a slightly darker border */
+}
+/* Pico handles hover/focus for outline buttons */
+
+#review-status {
+    font-size: 0.8em;
+    color: var(--pico-muted-color);
+    margin-left: var(--pico-spacing); /* Increase margin slightly */
+    min-height: 1em; /* Keep min-height */
+    display: inline-block;
+    transition: opacity 0.5s ease-out; /* Add fade out for status */
+}
+
+/* Navigation, counter, nav-button, back-link handled by Pico/HTML changes - Remove */

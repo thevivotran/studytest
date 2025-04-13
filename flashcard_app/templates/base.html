@@ -4,19 +4,22 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>{% block title %}Flashcard App{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@latest/css/pico.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     {% block head_extra %}{% endblock %}
 </head>
 <body>
-    <div class="container">
+    <main class="container"> {# Changed div to main for semantic HTML, Pico uses this #}
         <h1>Flashcard Application</h1>
         <hr>
 
         {# Flash messages section #}
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="flash-messages">
+                <div class="flash-messages"> {# Keep this wrapper for potential custom styling #}
                 {% for category, message in messages %}
+                    {# Pico might style alerts based on attributes, but let's keep classes for now #}
+                    <article class="alert alert-{{ category }}"> {# Use article for alerts with Pico? Check docs. Let's try keeping div with classes first. Reverting to div. #}
                     <div class="alert alert-{{ category }}">{{ message }}</div>
                 {% endfor %}
                 </div>
@@ -25,7 +28,7 @@
 
         {# Main content block #}
         {% block content %}{% endblock %}
-    </div>
+    </main> {# Changed div to main #}
 
     {% block scripts %}{% endblock %}
 </body>

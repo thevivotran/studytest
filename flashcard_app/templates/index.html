@@ -3,19 +3,24 @@
 {% block title %}Dataset Selection - Flashcard App{% endblock %}
 
 {% block content %}
-    <h2>Upload New Dataset</h2>
-    <form method="post" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
-        <div class="form-group">
+    <article> {# Wrap form in article for better spacing/styling with Pico #}
+        <hgroup>
+            <h2>Upload New Dataset</h2>
+            <h3>Provide a name and a CSV file</h3>
+        </hgroup>
+        <form method="post" action="{{ url_for('upload_file') }}" enctype="multipart/form-data">
+            {# Removed form-group divs #}
             <label for="dataset_name">Dataset Name:</label>
             <input type="text" id="dataset_name" name="dataset_name" required>
-        </div>
-        <div class="form-group">
+
             <label for="csv_file">Select CSV File:</label>
             <input type="file" id="csv_file" name="csv_file" accept=".csv" required>
             <small>(Format: question, correct_answer, choice1, choice2, choice3, choice4, [choice5] - no header)</small>
-        </div>
-        <button type="submit" class="btn">Upload Dataset</button>
-    </form>
+
+            {# Removed btn class, Pico styles button automatically #}
+            <button type="submit">Upload Dataset</button>
+        </form>
+    </article>
 
     <hr>
 
@@ -24,16 +29,16 @@
         <ul class="dataset-list">
             {% for dataset in datasets %}
                 <li>
-                    {# Learn Link #}
-                    <a href="{{ url_for('learn_dataset', dataset_id=dataset.id) }}" class="dataset-name-link">{{ dataset.name }}</a>
+                    {# Learn Link - Removed dataset-name-link class #}
+                    <a href="{{ url_for('learn_dataset', dataset_id=dataset.id) }}">{{ dataset.name }}</a>
 
-                    {# Review Button - Added #}
-                    {# Assuming the route name will be 'review_dataset' #}
-                    <a href="{{ url_for('review_dataset', dataset_id=dataset.id) }}" class="btn btn-secondary btn-sm" style="margin-left: 10px;">Review Marked</a>
+                    {# Review Button - Use Pico role and classes, removed inline style #}
+                    <a href="{{ url_for('review_dataset', dataset_id=dataset.id) }}" role="button" class="secondary outline btn-sm">Review Marked</a>
 
-                    {# Delete Button Form #}
-                    <form action="{{ url_for('delete_dataset', dataset_id=dataset.id) }}" method="POST" style="display:inline; margin-left: 5px;" onsubmit="return confirm('Are you sure you want to delete the dataset \'{{ dataset.name }}\'? This action cannot be undone.');">
-                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    {# Delete Button Form - Removed inline style #}
+                    <form action="{{ url_for('delete_dataset', dataset_id=dataset.id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete the dataset \'{{ dataset.name }}\'? This action cannot be undone.');">
+                        {# Keep btn-danger and btn-sm classes #}
+                        <button type="submit" class="btn-danger btn-sm">Delete</button>
                     </form>
                 </li>
             {% endfor %}

@@ -3,185 +3,52 @@
 {% block title %}{% if mode == 'review' %}Review{% else %}Learn{% endif %} Flashcards{% endblock %}
 
 {% block head_extra %}
-<style>
-    .flashcard {
-        border: 1px solid #ccc;
-        padding: 20px;
-        margin-bottom: 20px;
-        min-height: 150px;
-        position: relative;
-        background-color: #f9f9f9;
-    }
-    .flashcard .question-area {
-        cursor: pointer;
-        margin-bottom: 15px;
-    }
-    .flashcard .question {
-        font-weight: bold;
-        display: inline-block;
-        margin-right: 10px;
-    }
-    .flashcard .review-indicator { /* Style for the review indicator */
-        font-size: 0.8em;
-        font-weight: bold;
-        color: #e67e22; /* Orange color */
-        background-color: #fdf2e9;
-        padding: 2px 5px;
-        border-radius: 3px;
-        display: none; /* Hidden by default */
-        vertical-align: middle;
-    }
-    .flashcard .review-indicator.visible { /* Class to show the indicator */
-        display: inline-block;
-    }
-    .flashcard .choices ul {
-        list-style: none;
-        padding: 0;
-        margin-top: 10px; /* Add some space above choices */
-    }
-    .flashcard .choices li {
-        margin-bottom: 8px; /* Slightly more space between choices */
-    }
-    .flashcard .choice-label { /* Style for A, B, C labels */
-        font-weight: bold;
-        margin-right: 8px;
-        display: inline-block;
-        width: 20px; /* Align labels */
-        text-align: right;
-    }
-    .flashcard .answer {
-        margin-top: 15px;
-        padding-top: 10px;
-        border-top: 1px dashed #eee;
-        color: green;
-        font-weight: bold;
-        opacity: 0;
-        transition: opacity 0.5s ease-in-out;
-    }
-    .flashcard.show-answer .answer {
-        opacity: 1;
-    }
-    /* Styles for notes */
-    .notes-section {
-        margin-top: 20px;
-        padding-top: 15px;
-        border-top: 1px solid #eee;
-    }
-    .notes-section h4 {
-        margin-bottom: 5px;
-        font-size: 1em;
-        color: #444;
-    }
-    .notes-section textarea {
-        width: 100%;
-        box-sizing: border-box;
-        border: 1px solid #ccc;
-        padding: 8px;
-        font-family: inherit;
-        font-size: 0.95em;
-    }
-    #notes-status {
-        font-size: 0.8em;
-        color: grey;
-        margin-left: 5px;
-        min-height: 1em;
-        display: inline-block;
-    }
-    /* End notes styles */
-
-    /* Styles for review toggle */
-    .review-toggle-section {
-        margin-top: 15px;
-        padding-top: 10px;
-        border-top: 1px dotted #ddd;
-    }
-    .review-toggle-button {
-        padding: 5px 10px;
-        cursor: pointer;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        background-color: #f0f0f0;
-        font-size: 0.9em;
-    }
-    .review-toggle-button.marked {
-        background-color: #fdf2e9;
-        border-color: #e67e22;
-        color: #e67e22;
-    }
-    #review-status {
-        font-size: 0.8em;
-        color: grey;
-        margin-left: 10px;
-        min-height: 1em;
-        display: inline-block;
-    }
-    /* End review toggle styles */
-
-    .navigation {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-    .card-counter {
-        font-style: italic;
-        color: #555;
-    }
-    .nav-button {
-        padding: 8px 15px;
-        text-decoration: none;
-        border: 1px solid #ddd;
-        background-color: #eee;
-        color: #333;
-        border-radius: 4px;
-    }
-    .nav-button:hover {
-        background-color: #ddd;
-    }
-    .nav-button.disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        pointer-events: none;
-    }
-    .back-link {
-         display: inline-block;
-         margin-top: 20px;
-         color: #007bff;
-         text-decoration: none;
-    }
-    .back-link:hover {
-        text-decoration: underline;
-    }
-</style>
+    {# Link the external CSS file for learn page specific styles #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='learn.css') }}">
 {% endblock %}
 
 {% block content %}
-    {# Display mode in title #}
-    <h2>{% if mode == 'review' %}Reviewing{% else %}Learning{% endif %} Dataset (ID: {{ dataset_id }})</h2>
+    {# Display mode in title - Using hgroup for semantic grouping with Pico #}
+    <hgroup>
+        <h2>{% if mode == 'review' %}Reviewing{% else %}Learning{% endif %} Dataset</h2>
+        <h3>ID: {{ dataset_id }}</h3>
+    </hgroup>
 
-    <div class="navigation">
-        {# Add mode=mode to navigation links #}
-        <a href="{{ url_for('show_card', dataset_id=dataset_id, card_index=current_index - 1, mode=mode) }}"
-           class="nav-button {% if current_index == 0 %}disabled{% endif %}">
-            &laquo; Previous
-        </a>
-        <span class="card-counter">Card {{ current_index + 1 }} of {{ total_cards }}</span>
-        <a href="{{ url_for('show_card', dataset_id=dataset_id, card_index=current_index + 1, mode=mode) }}"
-           class="nav-button {% if current_index + 1 >= total_cards %}disabled{% endif %}">
-            Next &raquo;
-        </a>
-    </div>
+    {# Navigation - Using nav element #}
+    <nav class="navigation">
+        <ul>
+            <li>
+                {# Use role="button" for Pico styling on links #}
+                <a href="{{ url_for('show_card', dataset_id=dataset_id, card_index=current_index - 1, mode=mode) }}"
+                   role="button" class="secondary {% if current_index == 0 %}disabled{% endif %}"> {# Pico secondary style #}
+                    &laquo; Previous
+                </a>
+            </li>
+        </ul>
+        <ul>
+            <li><ins class="card-counter">Card {{ current_index + 1 }} of {{ total_cards }}</ins></li> {# Pico <ins> for inline text #}
+        </ul>
+        <ul>
+            <li>
+                <a href="{{ url_for('show_card', dataset_id=dataset_id, card_index=current_index + 1, mode=mode) }}"
+                   role="button" class="secondary {% if current_index + 1 >= total_cards %}disabled{% endif %}">
+                    Next &raquo;
+                </a>
+            </li>
+        </ul>
+    </nav>
 
-    <div id="card-container" class="flashcard">
-        <div class="question-area" onclick="toggleAnswer()">
-            <div class="question">
-                Q: {{ card.question }}
-            </div>
-            {# --- Visual Indicator for Review --- #}
-            <span class="review-indicator {% if card.mark_for_review %}visible{% endif %}" id="review-indicator">
-                Marked for Review
-            </span>
-            {# --- End Visual Indicator --- #}
+    {# Flashcard - Using article element #}
+    <article id="card-container" class="flashcard">
+        <div class="question-area" onclick="toggleAnswer()"> {# Keep onclick for simple toggle #}
+            <header> {# Use header for question part #}
+                <strong>Q: {{ card.question }}</strong> {# Use strong tag #}
+                {# --- Visual Indicator for Review --- #}
+                <span class="review-indicator {% if card.mark_for_review %}visible{% endif %}" id="review-indicator">
+                     <small>Marked for Review</small> {# Use small tag #}
+                </span>
+                {# --- End Visual Indicator --- #}
+            </header>
 
             {# --- Display Shuffled Choices with Alphabetical Labels --- #}
             <div class="choices">
@@ -189,7 +56,7 @@
                     {% set letters = ['A', 'B', 'C', 'D', 'E'] %} {# Define letters for labels #}
                     {% for choice in shuffled_choices %}
                         <li>
-                            <span class="choice-label">{{ letters[loop.index0] }}:</span> {{ choice }}
+                            <kbd>{{ letters[loop.index0] }}</kbd>: {{ choice }} {# Use kbd for choice label #}
                         </li>
                     {% endfor %}
                 </ul>
@@ -197,138 +64,38 @@
             {# --- End Shuffled Choices --- #}
 
             <div class="answer">
-                Correct Answer: {{ card.correct_answer }}
+                <strong>Correct Answer:</strong> {{ card.correct_answer }}
             </div>
         </div> {# End question-area #}
 
         {# --- Notes Section --- #}
         <div class="notes-section">
-            <h4>Notes:</h4>
+            <label for="card-notes">Notes:</label> {# Add label for accessibility #}
             <textarea id="card-notes" data-card-id="{{ card.id }}" rows="4">{{ card.notes if card.notes else '' }}</textarea>
-            <span id="notes-status"></span>
+            <small id="notes-status"></small> {# Use small tag for status #}
         </div>
         {# --- End Notes Section --- #}
 
         {# --- Review Toggle Section --- #}
         <div class="review-toggle-section">
+             {# Button styled by Pico automatically. Removed onclick, handled by JS listener. #}
             <button id="review-toggle-button"
-                    class="review-toggle-button {% if card.mark_for_review %}marked{% endif %}"
-                    data-card-id="{{ card.id }}"
-                    onclick="toggleReviewStatus(this)">
+                    class="secondary outline review-toggle-button {% if card.mark_for_review %}marked{% endif %}" {# Pico secondary outline style #}
+                    data-card-id="{{ card.id }}">
                 {% if card.mark_for_review %}Unmark for Review{% else %}Mark for Review{% endif %}
             </button>
-            <span id="review-status"></span>
+            <small id="review-status"></small> {# Use small tag for status #}
         </div>
         {# --- End Review Toggle Section --- #}
 
-    </div> {# End card-container #}
+    </article> {# End card-container #}
 
-    <a href="{{ url_for('index') }}" class="back-link">&laquo; Back to Datasets</a>
+    {# Back link - Use Pico button styling #}
+    <a href="{{ url_for('index') }}" role="button" class="contrast outline">&laquo; Back to Datasets</a> {# Pico contrast outline style #}
 
 {% endblock %}
 
 {% block scripts %}
-<script>
-    function toggleAnswer() {
-        const cardElement = document.getElementById('card-container');
-        cardElement.classList.toggle('show-answer');
-    }
-
-    // --- Notes Auto-Save Logic ---
-    const notesTextarea = document.getElementById('card-notes');
-    const notesStatus = document.getElementById('notes-status');
-    let saveTimeout;
-
-    notesTextarea.addEventListener('blur', function() {
-        const cardId = this.dataset.cardId;
-        const notesContent = this.value;
-
-        clearTimeout(saveTimeout);
-        notesStatus.textContent = 'Saving...';
-        notesStatus.style.color = 'orange';
-
-        const formData = new FormData();
-        formData.append('notes', notesContent);
-
-        fetch(`/update_note/${cardId}`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => { throw new Error(err.message || `HTTP error! status: ${response.status}`) });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.status === 'success') {
-                notesStatus.textContent = 'Saved';
-                notesStatus.style.color = 'green';
-            } else {
-                throw new Error(data.message || 'Unknown error saving notes.');
-            }
-        })
-        .catch(error => {
-            console.error('Error saving notes:', error);
-            notesStatus.textContent = 'Error saving!';
-            notesStatus.style.color = 'red';
-        })
-        .finally(() => {
-            saveTimeout = setTimeout(() => {
-                notesStatus.textContent = '';
-            }, 3000);
-        });
-    });
-    // --- End Notes Auto-Save Logic ---
-
-    // --- Review Toggle Logic ---
-    const reviewStatus = document.getElementById('review-status');
-    const reviewIndicator = document.getElementById('review-indicator');
-    let reviewTimeout;
-
-    function toggleReviewStatus(button) {
-        const cardId = button.dataset.cardId;
-
-        clearTimeout(reviewTimeout);
-        reviewStatus.textContent = 'Updating...';
-        reviewStatus.style.color = 'orange';
-
-        fetch(`/toggle_review/${cardId}`, {
-            method: 'POST'
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => { throw new Error(err.message || `HTTP error! status: ${response.status}`) });
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.status === 'success') {
-                button.classList.toggle('marked');
-                const newIsMarked = button.classList.contains('marked');
-                button.textContent = newIsMarked ? 'Unmark for Review' : 'Mark for Review';
-
-                // Toggle visual indicator class
-                reviewIndicator.classList.toggle('visible', newIsMarked);
-
-                reviewStatus.textContent = 'Status updated';
-                reviewStatus.style.color = 'green';
-            } else {
-                throw new Error(data.message || 'Unknown error toggling review status.');
-            }
-        })
-        .catch(error => {
-            console.error('Error toggling review status:', error);
-            reviewStatus.textContent = 'Error updating!';
-            reviewStatus.style.color = 'red';
-        })
-        .finally(() => {
-            reviewTimeout = setTimeout(() => {
-                reviewStatus.textContent = '';
-            }, 3000);
-        });
-    }
-    // --- End Review Toggle Logic ---
-
-</script>
+    {# Link the external JavaScript file #}
+    <script src="{{ url_for('static', filename='learn.js') }}"></script>
 {% endblock %}
