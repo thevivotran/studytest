@@ -138,12 +138,14 @@ document.addEventListener('keydown', function(event) {
         event.preventDefault();
         toggleAnswer();
     } else if (event.code === 'ArrowLeft') {
-        const prevButton = document.querySelector('.navigation a:first-of-type');
+        // Updated selector for Previous button
+        const prevButton = document.querySelector('.navigation ul:first-of-type a');
         if (prevButton && !prevButton.classList.contains('disabled')) {
             window.location.href = prevButton.href; // Navigate
         }
     } else if (event.code === 'ArrowRight') {
-        const nextButton = document.querySelector('.navigation a:last-of-type');
+        // Updated selector for Next button
+        const nextButton = document.querySelector('.navigation ul:last-of-type a');
         if (nextButton && !nextButton.classList.contains('disabled')) {
             window.location.href = nextButton.href; // Navigate
         }

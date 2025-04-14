@@ -139,6 +139,7 @@ def upload_file():
             line_num += 1
             # Expecting 6 or 7 columns: question, correct_answer, choice1-4, [choice5]
             if not (6 <= len(row) <= 7):
+                print(len(row))
                 raise ValueError(
                     f"Incorrect number of columns ({len(row)}) on line {line_num}. Expected 6 or 7."
                 )
@@ -269,29 +270,36 @@ def review_dataset(dataset_id):
 def show_card(dataset_id, card_index, mode="learn"):  # Default to learn mode
     """Displays a specific flashcard for the given dataset and index, handling learn/review modes."""
 
-    is_review_mode = mode == "review"
+    # --- Fetch Dataset Info ---
+    dataset = database.get_dataset_by_id(dataset_id)
+    if not dataset:
+        flash(f"Dataset with ID {dataset_id} not found.", "danger")
+        return redirect(url_for("index"))
+    dataset_name = dataset["name"] # Get name from the dataset row
 
-    # Fetch appropriate cards based on mode
+    # --- Fetch Cards based on Mode ---
+    is_review_mode = mode == "review"
     if is_review_mode:
         cards = database.get_review_cards_by_dataset(dataset_id)
         if not cards:
             flash(
-                f"No cards marked for review in dataset {dataset_id}. Returning to index.",
+                f"No cards marked for review in dataset '{dataset_name}'. Returning to index.",
                 "info",
             )
             return redirect(url_for("index"))
     else:  # Learn mode
         cards = database.get_cards_by_dataset(dataset_id)
         if not cards:
-            flash(f"Dataset {dataset_id} not found or is empty.", "warning")
+            # This case should ideally be caught by learn_dataset, but check again
+            flash(f"Dataset '{dataset_name}' is empty.", "warning")
             return redirect(url_for("index"))
 
     total_cards = len(cards)
 
-    # Validate card_index bounds against the fetched list (learn or review)
+    # --- Validate card_index ---
     if not (0 <= card_index < total_cards):
         flash(
-            f"Invalid card index ({card_index}) for {mode} mode. Showing first card instead.",
+            f"Invalid card index ({card_index}) for {mode} mode in dataset '{dataset_name}'. Showing first card instead.",
             "warning",
         )
         # Redirect to the first card of this dataset *in the current mode*
@@ -306,9 +314,8 @@ def show_card(dataset_id, card_index, mode="learn"):  # Default to learn mode
     if not is_review_mode:
         save_progress(dataset_id, card_index)
 
-    # --- Prepare Choices for Shuffling (Phase 3) ---
+    # --- Prepare Choices for Shuffling ---
     choices = [
-        current_card["correct_answer"],
         current_card["choice1"],
         current_card["choice2"],
         current_card["choice3"],
@@ -323,18 +330,17 @@ def show_card(dataset_id, card_index, mode="learn"):  # Default to learn mode
     # Shuffle the choices
     shuffled_choices = choices[:]  # Create a copy before shuffling
     random.shuffle(shuffled_choices)
-    # --- End Prepare Choices ---
 
-    # Pass necessary data to the template
+    # --- Render Template ---
     return render_template(
         "learn.html",
         card=current_card,
         dataset_id=dataset_id,
+        dataset_name=dataset_name, # Pass dataset name
         current_index=card_index,
         total_cards=total_cards,
-        mode=mode,  # Pass mode to template for navigation links
-        shuffled_choices=shuffled_choices,  # Pass shuffled choices
-        # The original correct answer is still in card.correct_answer
+        mode=mode,
+        shuffled_choices=shuffled_choices,
     )
 
 

@@ -219,6 +219,21 @@ def get_dataset_id_by_name(name):
         conn.close()
 
 
+def get_dataset_by_id(dataset_id):
+    """Retrieves a dataset by its ID. Returns the dataset row or None if not found."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT id, name FROM datasets WHERE id = ?", (dataset_id,))
+        result = cursor.fetchone()
+        return result # Returns the row object or None
+    except sqlite3.Error as e:
+        print(f"Error fetching dataset for ID '{dataset_id}': {e}")
+        return None
+    finally:
+        conn.close()
+
+
 def delete_dataset(dataset_id):
     """Deletes a dataset and all its associated cards (due to ON DELETE CASCADE)."""
     conn = get_db_connection()

@@ -11,20 +11,22 @@
     {# Display mode in title - Using hgroup for semantic grouping with Pico #}
     <hgroup>
         <h2>{% if mode == 'review' %}Reviewing{% else %}Learning{% endif %} Dataset</h2>
-        <h3>ID: {{ dataset_id }}</h3>
+        <h3>{{ dataset_name }}</h3> {# <-- Changed from ID to name #}
     </hgroup>
 
     {# Navigation - Using nav element #}
     <nav class="navigation">
+        {% if current_index > 0 %} {# <-- Add this condition #}
         <ul>
             <li>
                 {# Use role="button" for Pico styling on links #}
                 <a href="{{ url_for('show_card', dataset_id=dataset_id, card_index=current_index - 1, mode=mode) }}"
-                   role="button" class="secondary {% if current_index == 0 %}disabled{% endif %}"> {# Pico secondary style #}
+                   role="button" class="secondary"> {# <-- Remove disabled class logic #}
                     &laquo; Previous
                 </a>
             </li>
         </ul>
+        {% endif %} {# <-- End condition #}
         <ul>
             <li><ins class="card-counter">Card {{ current_index + 1 }} of {{ total_cards }}</ins></li> {# Pico <ins> for inline text #}
         </ul>
@@ -56,7 +58,7 @@
                     {% set letters = ['A', 'B', 'C', 'D', 'E'] %} {# Define letters for labels #}
                     {% for choice in shuffled_choices %}
                         <li>
-                            <kbd>{{ letters[loop.index0] }}</kbd>: {{ choice }} {# Use kbd for choice label #}
+                            <kbd>{{ letters[loop.index0] }}</kbd> {{ choice }} {# Use kbd for choice label #}
                         </li>
                     {% endfor %}
                 </ul>

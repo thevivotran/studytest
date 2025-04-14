@@ -1,3 +1,7 @@
+body {
+    zoom: 0.8; /* Set default zoom to 80% */
+}
+
 /* Keep specific styles not directly handled by Pico */
 
 /* Danger Button Style (for Delete) */
@@ -107,4 +111,16 @@
 }
 [data-theme="dark"] .alert-info {
     color: #d1ecf1; background-color: #0c5460; border-color: #1a6b7a;
+}
+
+/* Index Page Layout */
+.grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr; /* 2/3 width for datasets, 1/3 for upload */
+    gap: var(--pico-spacing); /* Use Pico spacing for gap */
+}
+
+/* Optional: Add some padding or margin to the sections if needed */
+.datasets-section, .upload-section {
+    /* padding: var(--pico-spacing); */ /* Example: Add padding if desired */
 }
