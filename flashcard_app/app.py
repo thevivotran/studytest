@@ -133,8 +133,11 @@ def upload_file():
         stream = io.StringIO(file.stream.read().decode("UTF-8"), newline=None)
         csv_reader = csv.reader(stream)
 
+        # Skip the header row
+        next(csv_reader, None)
+
         cards_to_add = []
-        line_num = 0
+        line_num = 1 # Start line count from 1 (after header)
         for row in csv_reader:
             line_num += 1
             # Expecting 6 or 7 columns: question, correct_answer, choice1-4, [choice5]
@@ -173,7 +176,7 @@ def upload_file():
             )
 
         if not cards_to_add:
-            raise ValueError("CSV file is empty or contains no valid data rows.")
+            raise ValueError("CSV file is empty or contains no valid data rows after the header.")
 
         # --- Add to Database ---
         dataset_id = database.add_dataset(dataset_name)
